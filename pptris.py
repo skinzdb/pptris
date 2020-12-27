@@ -57,11 +57,11 @@ class Blook:
         return out[:-1]
 
     def rotateClockwise(self):
-        #cunstruct new array with [x,y] equal to old array [y, width - x - 1] (this is equivelent to a rotation about its center)
+        #construct new array with [x,y] equal to old array [y, width - x - 1] (this is equivalent to a rotation about its centre)
         self.segments = [[self.segments[len(self.segments) - i - 1][j] for i in range(len(self.segments))] for j in range(len(self.segments[0]))]
 
     def rotateAClockwise(self):
-        #cunstruct new array with [x,y] equal to old array [width - y - 1, x] (this is equivelent to a rotation about its center)
+        #construct new array with [x,y] equal to old array [width - y - 1, x] (this is equivalent to a rotation about its centre)
         self.segments = [[self.segments[i][len(self.segments[0]) - 1 - j] for i in range(len(self.segments))] for j in range(len(self.segments[0]))]
     
     def draw(self, canvas):
@@ -73,11 +73,12 @@ class Blook:
 
 class Scene:
     def __init__(self):
-        self.activeBlock = makeRandomBlock()
+        self.frames = 0
+        
         self.playfield = [[0 for i in range(PLAYFIELD_WIDTH)] for j in range(PLAYFIELD_HEIGHT)] # 2D array 20x10
-        self.sel_blook = makeRandomBlock()
-        self.stored_blook = None
-        self.next_blook = None
+        self.selBlook = makeRandomBlock()
+        self.storedBlook = None
+        self.nextBlook = None
 
         self.root = tk.Tk()
         self.canvas = tk.Canvas(self.root, width=320, height=480)
@@ -88,17 +89,21 @@ class Scene:
         self.root.bind('<Up>', upKey)
         self.root.bind('<Down>', downKey)
         
-
     def start(self):
         self.root.after(20, update)
         self.root.mainloop()
 
     def update(self):
-        print("update")
-        print(self.activeBlock)
+        self.frames = (self.frames + 1) % 50
+        
+        if self.frames == 0:
+            self.selBlook.position[1] += 1
+        
+        #print("update")
+        #print(self.selBlook)
     def draw(self):
         self.draw_playfield()
-        self.sel_blook.draw(self.canvas)
+        self.selBlook.draw(self.canvas)
         self.canvas.update()
     def draw_playfield(self):
         self.canvas.delete('playfield')
