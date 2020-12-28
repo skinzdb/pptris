@@ -9,39 +9,39 @@ import random
 PLAYFIELD_WIDTH = 10
 PLAYFIELD_HEIGHT = 20
 
-blooks = [
-    [[1,1],
-     [1,1]],
+blooks = (
+    ((1,1),
+     (1,1)),
 
-    [[1,0,0],
-     [1,1,1],
-     [0,0,0]],
+    ((1,0,0),
+     (1,1,1),
+     (0,0,0)),
 
-    [[0,1,0],
-     [1,1,1],
-     [0,0,0]],
+    ((0,1,0),
+     (1,1,1),
+     (0,0,0)),
 
-    [[1,0,0],
-     [1,1,1],
-     [0,0,0]],
+    ((1,0,0),
+     (1,1,1),
+     (0,0,0)),
 
-    [[0,0,0,0],
-     [1,1,1,1],
-     [0,0,0,0],
-     [0,0,0,0]],
+    ((0,0,0,0),
+     (1,1,1,1),
+     (0,0,0,0),
+     (0,0,0,0)),
 
-    [[1,1,0],
-     [0,1,1],
-     [0,0,0]],
+    ((1,1,0),
+     (0,1,1),
+     (0,0,0)),
 
-    [[0,1,1],
-     [1,1,0],
-     [0,0,0]]
-]
+    ((0,1,1),
+     (1,1,0),
+     (0,0,0))
+)
 
-defaultPositions = [(4,0), (3,0), (3,0), (3,0), (3,0), (3,0), (3,0)]
+defaultPositions = ((4,0), (3,0), (3,0), (3,0), (3,0), (3,0), (3,0))
 
-tileColours = ["black", "white"]
+tileColours = ("black", "white")
 #root needs to be global for some methods idk the best way to do this
 scene = None
 
@@ -105,6 +105,7 @@ class Scene:
                 self.selBlook.position[1] += 1
             else:
                 self.bake()
+
     def checkMove(self, xoff, yoff):
         if yoff + len(self.selBlook.segments) + self.selBlook.position[1] > PLAYFIELD_HEIGHT:
             return False
@@ -113,23 +114,28 @@ class Scene:
                 if self.playfield[y + self.selBlook.position[1] + yoff][x + self.selBlook.position[0] + xoff] & self.selBlook.segments[y][x]:
                     return False
         return True
+
     def bake(self):
         for y in range(len(self.selBlook.segments)):
             for x in range(len(self.selBlook.segments)):
                 self.playfield[y + self.selBlook.position[1]][x + self.selBlook.position[0]] = self.playfield[y + self.selBlook.position[1]][x + self.selBlook.position[0]] | self.selBlook.segments[y][x]
         self.selBlook = self.nextBlook
         self.nextBlook = makeRandomBlock()
+
     def left(self):
         if self.selBlook.position[0] > 0:
             self.selBlook.position[0] -= 1
+
     def right(self):
         if self.selBlook.position[0] + len(self.selBlook.segments) < PLAYFIELD_WIDTH:
             self.selBlook.position[0] += 1
+
     def draw(self):
-        self.canvas.delete("all")
+        self.canvas.delete("blook")
         self.draw_playfield()
         self.selBlook.draw(self.canvas)
         self.canvas.update()
+
     def draw_playfield(self):
         self.canvas.delete('playfield')
         for i in range(PLAYFIELD_HEIGHT):#draw to the size of the play field not random constants
