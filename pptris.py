@@ -118,16 +118,16 @@ class Scene:
     def bake(self):
         for y in range(len(self.selBlook.segments)):
             for x in range(len(self.selBlook.segments)):
-                self.playfield[y + self.selBlook.position[1]][x + self.selBlook.position[0]] = self.playfield[y + self.selBlook.position[1]][x + self.selBlook.position[0]] | self.selBlook.segments[y][x]
+                self.playfield[y + self.selBlook.position[1]][x + self.selBlook.position[0]] |= self.selBlook.segments[y][x]
         self.selBlook = self.nextBlook
         self.nextBlook = makeRandomBlock()
 
     def left(self):
-        if self.selBlook.position[0] > 0:
+        if self.selBlook.position[0] > 0 and self.checkMove(-1, 0):
             self.selBlook.position[0] -= 1
 
     def right(self):
-        if self.selBlook.position[0] + len(self.selBlook.segments) < PLAYFIELD_WIDTH:
+        if self.selBlook.position[0] + len(self.selBlook.segments) < PLAYFIELD_WIDTH and self.checkMove(1, 0):
             self.selBlook.position[0] += 1
 
     def draw(self):
