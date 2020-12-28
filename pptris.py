@@ -48,7 +48,7 @@ scene = None
 class Blook:
     def __init__(self, content, pos):
         self.segments = content
-        self.position = pos
+        self.position = [pos[0], pos[1]]
 
     def __str__(self):
         out = ""
@@ -77,8 +77,8 @@ class Scene:
         
         self.playfield = [[0 for i in range(PLAYFIELD_WIDTH)] for j in range(PLAYFIELD_HEIGHT)] # 2D array 20x10
         self.selBlook = makeRandomBlock()
-        self.storedBlook = None
-        self.nextBlook = None
+        self.storedBlook = makeRandomBlock()
+        self.nextBlook = makeRandomBlock()
 
         self.root = tk.Tk()
         self.canvas = tk.Canvas(self.root, width=320, height=480)
@@ -88,20 +88,45 @@ class Scene:
         self.root.bind('<Right>', rightKey)
         self.root.bind('<Up>', upKey)
         self.root.bind('<Down>', downKey)
+
+        self.leftActive = 0
+        self.rightActive = 0
         
     def start(self):
-        self.root.after(20, update)
+        self.root.after(16, update)
         self.root.mainloop()
 
     def update(self):
-        self.frames = (self.frames + 1) % 50
-        
+        self.frames = (self.frames + 1) % 20
         if self.frames == 0:
-            self.selBlook.position[1] += 1
-        
-        #print("update")
-        #print(self.selBlook)
+            print()
+            print(self.playfield)
+            if self.checkMove(0, 1):
+                self.selBlook.position[1] += 1
+            else:
+                self.bake()
+    def checkMove(self, xoff, yoff):
+        if yoff + len(self.selBlook.segments) + self.selBlook.position[1] > PLAYFIELD_HEIGHT:
+            return False
+        for y in range(len(self.selBlook.segments)):
+            for x in range(len(self.selBlook.segments)):
+                if self.playfield[y + self.selBlook.position[1] + yoff][x + self.selBlook.position[0] + xoff] & self.selBlook.segments[y][x]:
+                    return False
+        return True
+    def bake(self):
+        for y in range(len(self.selBlook.segments)):
+            for x in range(len(self.selBlook.segments)):
+                self.playfield[y + self.selBlook.position[1]][x + self.selBlook.position[0]] = self.playfield[y + self.selBlook.position[1]][x + self.selBlook.position[0]] | self.selBlook.segments[y][x]
+        self.selBlook = self.nextBlook
+        self.nextBlook = makeRandomBlock()
+    def left(self):
+        if self.selBlook.position[0] > 0:
+            self.selBlook.position[0] -= 1
+    def right(self):
+        if self.selBlook.position[0] + len(self.selBlook.segments) < PLAYFIELD_WIDTH:
+            self.selBlook.position[0] += 1
     def draw(self):
+        self.canvas.delete("all")
         self.draw_playfield()
         self.selBlook.draw(self.canvas)
         self.canvas.update()
@@ -121,10 +146,10 @@ def makeRandomBlock():
     return Blook(blooks[index], defaultPositions[index])
 
 def leftKey(event):
-    None
+    scene.left()
 
 def rightKey(event):
-    None
+    scene.right()
 
 def upKey(event):
     None
