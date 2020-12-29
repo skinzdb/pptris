@@ -91,8 +91,8 @@ class Scene:
         self.root.bind("<Left>", leftKey) #bind input keys
         self.root.bind("<Right>", rightKey)
         self.root.bind("<Down>", downKey)
-        self.root.bind("<space>", spaceKey)
         self.root.bind("<Up>", rotateClock)
+        self.root.bind("<space>", spaceKey)
         self.root.bind('<z>', rotateAClock)
 
         self.leftActive = 0
@@ -105,20 +105,39 @@ class Scene:
     def update(self):
         self.frames = (self.frames + 1) % 20 #update frames
         if self.frames == 0:
-            print()
             #print(self.playfield)
             if self.checkMove(0, 1): #checks if any blocks below selBlook
                 self.selBlook.position[1] += 1 #continue moving down
             else:
                 self.bake() #set block in place
 
+                clearY = 0
+                clearLines = 1
+                for i in range(PLAYFIELD_HEIGHT):
+                    if self.playfield[i] == [[1] * PLAYFIELD_WIDTH]:
+                        print("POO")
+                        clearY = i
+                        break
+                    return
 
+                for i in range(1, 4):
+                    if self.playfield[clearY + i] == [[1] * PLAYFIELD_WIDTH]:
+                        clearLines += 1
+                    else:
+                        break
+
+                while (clearY >= clearLines - 1):
+                    self.playfield[clearY] = self.playfield[clearY - clearLines] 
+                    clearY -= 1
+
+                for i in range(clearLines):
+                    self.playfield[i] = [[0] * PLAYFIELD_WIDTH]
+                          
     def checkMove(self, xoff, yoff, rotate = "none"):
         sb = self.selBlook
         for y in range(len(sb.segments)):
             for x in range(len(sb.segments)):
                 try:
-
                     if rotate == "none":
                         if sb.segments[y][x] and (self.playfield[y + sb.position[1] + yoff][x + sb.position[0] + xoff] or x + sb.position[0] + xoff < 0):
                             return False
@@ -139,7 +158,6 @@ class Scene:
                     self.playfield[y + self.selBlook.position[1]][x + self.selBlook.position[0]] = 1
         self.selBlook = self.nextBlook
         self.nextBlook = makeRandomBlock()
-
 
     def left(self):
         if self.checkMove(-1, 0):
@@ -182,8 +200,6 @@ class Scene:
             self.selBlook.position[0] -= 2
             self.selBlook.rotateAClockwise()
             
-            
-
     def up(self): #rotate block clockwise
         None
     
@@ -210,7 +226,6 @@ class Scene:
                                              j * 20 + 30, i * 20 + 30,
                                              fill=tileColours[self.playfield[i][j]], tag="playfield")
 
-
 def makeRandomBlock():
     index = random.randint(0, 6)
     return Blook(blooks[index], defaultPositions[index])
@@ -228,6 +243,9 @@ def rightKey(event):
     scene.right()
 
 def downKey(event):
+    None
+
+def upKey(event):
     None
 
 def spaceKey(event):
