@@ -71,6 +71,13 @@ class Blook:
                 if self.segments[j][i]:
                     canvas.create_rectangle((self.position[0] + i) * 20 + 10, (self.position[1] + j) * 20 + 10,
                                             (self.position[0] + i) * 20 + 30, (self.position[1] + j) * 20 + 30, fill="white", tag='blook')
+    def drawPos(self, canvas, pos):
+        #draw the playfield
+        for i in range(len(self.segments)):
+            for j in range(len(self.segments[i])):
+                if self.segments[j][i]:
+                    canvas.create_rectangle((pos[0] + i) * 20 + 10, (pos[1] + j) * 20 + 10,
+                                            (pos[0] + i) * 20 + 30, (pos[1] + j) * 20 + 30, fill="white", tag='blook')
 
 class Scene:
     def __init__(self):
@@ -93,7 +100,9 @@ class Scene:
         self.root.bind("<Down>", downKey)
         self.root.bind("<Up>", rotateClock)
         self.root.bind("<space>", spaceKey)
+        self.root.bind("<x>", rotateClock)
         self.root.bind('<z>', rotateAClock)
+        self.root.bind('<c>', hold)
 
         self.leftActive = 0
         self.rightActive = 0
@@ -101,11 +110,13 @@ class Scene:
     def start(self):
         self.root.after(16, update)
         self.root.mainloop()
+    
+    def reset(self):
+        self.playfield = [[0 for i in range(PLAYFIELD_WIDTH)] for j in range(PLAYFIELD_HEIGHT)] #2D array 20x10
 
     def update(self):
         self.frames = (self.frames + 1) % 20 #update frames
         if self.frames == 0:
-            #print(self.playfield)
             if self.checkMove(0, 1): #checks if any blocks below selBlook
                 self.selBlook.position[1] += 1 #continue moving down
             else:
@@ -158,6 +169,8 @@ class Scene:
                     self.playfield[y + self.selBlook.position[1]][x + self.selBlook.position[0]] = 1
         self.selBlook = self.nextBlook
         self.nextBlook = makeRandomBlock()
+        if not self.checkMove(0,0):
+            self.reset()
 
     def left(self):
         if self.checkMove(-1, 0):
@@ -215,6 +228,8 @@ class Scene:
         self.canvas.delete("blook")
         self.drawPlayfield()
         self.selBlook.draw(self.canvas)
+        self.storedBlook.drawPos(self.canvas, [11, 5])
+        self.nextBlook.drawPos(self.canvas, [11, 1])
         self.canvas.update()
 
     def drawPlayfield(self):
@@ -256,6 +271,11 @@ def rotateClock(event):
 
 def rotateAClock(event):
     scene.rotate_aclock()
+
+def hold(event):
+    a = scene.nextBlook
+    scene.nextBlook = scene.storedBlook
+    scene.storedBlook = a
 
 def update():
     scene.update()
