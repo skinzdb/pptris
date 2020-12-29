@@ -58,11 +58,11 @@ class Blook:
 
     def rotateClockwise(self):
         #construct new array with [x,y] equal to old array [y, width - x - 1] (this is equivalent to a rotation about its centre)
-        self.segments = [[self.segments[len(self.segments) - i - 1][j] for i in range(len(self.segments))] for j in range(len(self.segments[0]))]
+        self.segments = [[self.segments[len(self.segments) - i - 1][j] for i in range(len(self.segments))] for j in range(len(self.segments))]
 
     def rotateAClockwise(self):
         #construct new array with [x,y] equal to old array [width - y - 1, x] (this is equivalent to a rotation about its centre)
-        self.segments = [[self.segments[i][len(self.segments[0]) - 1 - j] for i in range(len(self.segments))] for j in range(len(self.segments[0]))]
+        self.segments = [[self.segments[i][len(self.segments[0]) - 1 - j] for i in range(len(self.segments))] for j in range(len(self.segments))]
     
     def draw(self, canvas):
         #draw the playfield
@@ -87,8 +87,9 @@ class Scene:
 
         self.root.bind('<Left>', leftKey) #bind input keys
         self.root.bind('<Right>', rightKey)
-        self.root.bind('<Up>', upKey)
+        self.root.bind('<Up>', rotateClock)
         self.root.bind('<Down>', downKey)
+        self.root.bind('<z>', rotateAClock)
 
         self.leftActive = 0
         self.rightActive = 0
@@ -107,12 +108,21 @@ class Scene:
             else:
                 self.bake() #set block in place
 
-    def checkMove(self, xoff, yoff):
-        for y in range(len(self.selBlook.segments)):
-            for x in range(len(self.selBlook.segments)):
+    def checkMove(self, xoff, yoff, rotate = "none"):
+        sb = self.selBlook
+        for y in range(len(sb.segments)):
+            for x in range(len(sb.segments)):
                 try:
-                    if self.selBlook.segments[y][x] and self.playfield[y + self.selBlook.position[1] + yoff][x + self.selBlook.position[0] + xoff]:
-                        return False
+
+                    if rotate == "none":
+                        if sb.segments[y][x] and (self.playfield[y + sb.position[1] + yoff][x + sb.position[0] + xoff] or x + sb.position[0] + xoff < 0):
+                            return False
+                    if rotate == "clock":
+                        if sb.segments[len(sb.segments) - x - 1][y] and (self.playfield[y + sb.position[1] + yoff][x + sb.position[0] + xoff] or x + sb.position[0] + xoff < 0):
+                            return False
+                    if rotate == "aclock":
+                        if sb.segments[x][len(sb.segments) - y - 1] and (self.playfield[y + sb.position[1] + yoff][x + sb.position[0] + xoff] or x + sb.position[0] + xoff < 0):
+                            return False
                 except IndexError:
                     return False
         return True
@@ -126,12 +136,20 @@ class Scene:
         self.nextBlook = makeRandomBlock()
 
     def left(self):
-        if self.selBlook.position[0] > 0 and self.checkMove(-1, 0):
+        if self.checkMove(-1, 0):
             self.selBlook.position[0] -= 1
 
     def right(self):
-        if self.selBlook.position[0] + len(self.selBlook.segments) < PLAYFIELD_WIDTH and self.checkMove(1, 0):
+        if self.checkMove(1, 0):
             self.selBlook.position[0] += 1
+    
+    def rotate_clock(self):
+        if self.checkMove(0, 0, "clock"):
+            self.selBlook.rotateClockwise()
+
+    def rotate_aclock(self):
+        if self.checkMove(0, 0, "aclock"):
+            self.selBlook.rotateAClockwise()
 
     def draw(self):
         self.canvas.delete("blook")
@@ -142,7 +160,6 @@ class Scene:
     def draw_playfield(self):
         self.canvas.delete('playfield')
         for i in range(PLAYFIELD_HEIGHT): #draw to the size of the playfield
-            col = None
             for j in range(PLAYFIELD_WIDTH):
                 #use tileColours array too choose the colour for the tile (branchless programming techiques boi)
                 self.canvas.create_rectangle(j * 20 + 10, i * 20 + 10,
@@ -160,11 +177,14 @@ def leftKey(event):
 def rightKey(event):
     scene.right()
 
-def upKey(event):
-    None
-
 def downKey(event):
     None
+
+def rotateClock(event):
+    scene.rotate_clock()
+
+def rotateAClock(event):
+    scene.rotate_aclock()
 
 def update():
     scene.update()
