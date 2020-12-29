@@ -146,10 +146,37 @@ class Scene:
     def rotate_clock(self):
         if self.checkMove(0, 0, "clock"):
             self.selBlook.rotateClockwise()
+        elif self.checkMove(1, 0, "clock"):
+            self.selBlook.position[0] += 1
+            self.selBlook.rotateClockwise()
+        elif self.checkMove(-1, 0, "clock"):
+            self.selBlook.position[0] -= 1
+            self.selBlook.rotateClockwise()
+        elif self.checkMove(2, 0, "clock"):
+            self.selBlook.position[0] += 2
+            self.selBlook.rotateClockwise()
+        elif self.checkMove(-2, 0, "clock"):
+            self.selBlook.position[0] -= 2
+            self.selBlook.rotateClockwise()
+            
 
     def rotate_aclock(self):
         if self.checkMove(0, 0, "aclock"):
             self.selBlook.rotateAClockwise()
+        elif self.checkMove(1, 0, "aclock"):
+            self.selBlook.position[0] += 1
+            self.selBlook.rotateAClockwise()
+        elif self.checkMove(-1, 0, "aclock"):
+            self.selBlook.position[0] -= 1
+            self.selBlook.rotateAClockwise()
+        elif self.checkMove(2, 0, "aclock"):
+            self.selBlook.position[0] += 2
+            self.selBlook.rotateAClockwise()
+        elif self.checkMove(-2, 0, "aclock"):
+            self.selBlook.position[0] -= 2
+            self.selBlook.rotateAClockwise()
+            
+            
 
     def draw(self):
         self.canvas.delete("blook")
