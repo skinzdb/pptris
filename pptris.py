@@ -85,10 +85,14 @@ class Scene:
         self.canvas = tk.Canvas(self.root, width=320, height=480)
         self.canvas.pack()
 
-        self.root.bind('<Left>', leftKey) #bind input keys
-        self.root.bind('<Right>', rightKey)
-        self.root.bind('<Up>', rotateClock)
-        self.root.bind('<Down>', downKey)
+        self.root.bind("<KeyPress>", keydown)
+        self.root.bind("<KeyRelease>", keyup)
+
+        self.root.bind("<Left>", leftKey) #bind input keys
+        self.root.bind("<Right>", rightKey)
+        self.root.bind("<Up>", upKey)
+        self.root.bind("<Down>", downKey)
+        self.root.bind("<space>", spaceKey)
         self.root.bind('<z>', rotateAClock)
 
         self.leftActive = 0
@@ -102,11 +106,12 @@ class Scene:
         self.frames = (self.frames + 1) % 20 #update frames
         if self.frames == 0:
             print()
-            print(self.playfield)
+            #print(self.playfield)
             if self.checkMove(0, 1): #checks if any blocks below selBlook
                 self.selBlook.position[1] += 1 #continue moving down
             else:
                 self.bake() #set block in place
+
 
     def checkMove(self, xoff, yoff, rotate = "none"):
         sb = self.selBlook
@@ -134,6 +139,7 @@ class Scene:
                     self.playfield[y + self.selBlook.position[1]][x + self.selBlook.position[0]] = 1
         self.selBlook = self.nextBlook
         self.nextBlook = makeRandomBlock()
+
 
     def left(self):
         if self.checkMove(-1, 0):
@@ -178,25 +184,42 @@ class Scene:
             
             
 
+    def up(self): #rotate block clockwise
+        None
+    
+    def down(self): #soft drop
+        None
+
+    def space(self): #hard drop
+        while self.checkMove(0, 1):
+            self.selBlook.position[1] += 1
+        self.bake()
+
     def draw(self):
         self.canvas.delete("blook")
-        self.draw_playfield()
+        self.drawPlayfield()
         self.selBlook.draw(self.canvas)
         self.canvas.update()
 
-    def draw_playfield(self):
-        self.canvas.delete('playfield')
+    def drawPlayfield(self):
+        self.canvas.delete("playfield")
         for i in range(PLAYFIELD_HEIGHT): #draw to the size of the playfield
             for j in range(PLAYFIELD_WIDTH):
                 #use tileColours array too choose the colour for the tile (branchless programming techiques boi)
                 self.canvas.create_rectangle(j * 20 + 10, i * 20 + 10,
                                              j * 20 + 30, i * 20 + 30,
-                                             fill=tileColours[self.playfield[i][j]], tag='playfield')
+                                             fill=tileColours[self.playfield[i][j]], tag="playfield")
 
 
 def makeRandomBlock():
     index = random.randint(0, 6)
     return Blook(blooks[index], defaultPositions[index])
+
+def keydown(event):
+    None
+
+def keyup(event):
+    None
 
 def leftKey(event):
     scene.left()
@@ -207,6 +230,9 @@ def rightKey(event):
 def downKey(event):
     None
 
+def spaceKey(event):
+    scene.space()
+    
 def rotateClock(event):
     scene.rotate_clock()
 
