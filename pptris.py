@@ -90,9 +90,9 @@ class Scene:
 
         self.root.bind("<Left>", leftKey) #bind input keys
         self.root.bind("<Right>", rightKey)
-        self.root.bind("<Up>", upKey)
         self.root.bind("<Down>", downKey)
         self.root.bind("<space>", spaceKey)
+        self.root.bind("<Up>", rotateClock)
         self.root.bind('<z>', rotateAClock)
 
         self.leftActive = 0
