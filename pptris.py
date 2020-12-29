@@ -110,6 +110,9 @@ class Scene:
     def start(self):
         self.root.after(16, update)
         self.root.mainloop()
+    
+    def reset(self):
+        self.playfield = [[0 for i in range(PLAYFIELD_WIDTH)] for j in range(PLAYFIELD_HEIGHT)] #2D array 20x10
 
     def update(self):
         self.frames = (self.frames + 1) % 20 #update frames
@@ -146,6 +149,8 @@ class Scene:
                     self.playfield[y + self.selBlook.position[1]][x + self.selBlook.position[0]] = 1
         self.selBlook = self.nextBlook
         self.nextBlook = makeRandomBlock()
+        if not self.checkMove(0,0):
+            self.reset()
 
 
     def left(self):
