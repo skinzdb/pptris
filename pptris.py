@@ -39,7 +39,7 @@ blooks = (
      (0,0,0))
 )
 
-defaultPositions = ((4,0), (3,0), (3,0), (3,0), (3,0), (3,0), (3,0))
+defaultPositions = ((4,0), (3,0), (3,0), (3,0), (3,0), (3,0), (3,0)) #offset for where each block starts
 
 tileColours = ("black", "white")
 #root needs to be global for some methods idk the best way to do this
@@ -65,6 +65,7 @@ class Blook:
         self.segments = [[self.segments[i][len(self.segments[0]) - 1 - j] for i in range(len(self.segments))] for j in range(len(self.segments[0]))]
     
     def draw(self, canvas):
+        #draw the playfield
         for i in range(len(self.segments)):
             for j in range(len(self.segments[i])):
                 if self.segments[j][i]:
@@ -75,16 +76,16 @@ class Scene:
     def __init__(self):
         self.frames = 0
         
-        self.playfield = [[0 for i in range(PLAYFIELD_WIDTH)] for j in range(PLAYFIELD_HEIGHT)] # 2D array 20x10
+        self.playfield = [[0 for i in range(PLAYFIELD_WIDTH)] for j in range(PLAYFIELD_HEIGHT)] #2D array 20x10
         self.selBlook = makeRandomBlock()
         self.storedBlook = makeRandomBlock()
         self.nextBlook = makeRandomBlock()
 
-        self.root = tk.Tk()
+        self.root = tk.Tk() #create tkinter instance and canvas
         self.canvas = tk.Canvas(self.root, width=320, height=480)
         self.canvas.pack()
 
-        self.root.bind('<Left>', leftKey)
+        self.root.bind('<Left>', leftKey) #bind input keys
         self.root.bind('<Right>', rightKey)
         self.root.bind('<Up>', upKey)
         self.root.bind('<Down>', downKey)
@@ -97,14 +98,14 @@ class Scene:
         self.root.mainloop()
 
     def update(self):
-        self.frames = (self.frames + 1) % 20
+        self.frames = (self.frames + 1) % 20 #update frames
         if self.frames == 0:
             print()
             print(self.playfield)
-            if self.checkMove(0, 1):
-                self.selBlook.position[1] += 1
+            if self.checkMove(0, 1): #checks if any blocks below selBlook
+                self.selBlook.position[1] += 1 #continue moving down
             else:
-                self.bake()
+                self.bake() #set block in place
 
     def checkMove(self, xoff, yoff):
         if yoff + len(self.selBlook.segments) + self.selBlook.position[1] > PLAYFIELD_HEIGHT:
@@ -138,7 +139,7 @@ class Scene:
 
     def draw_playfield(self):
         self.canvas.delete('playfield')
-        for i in range(PLAYFIELD_HEIGHT):#draw to the size of the play field not random constants
+        for i in range(PLAYFIELD_HEIGHT): #draw to the size of the playfield
             col = None
             for j in range(PLAYFIELD_WIDTH):
                 #use tileColours array too choose the colour for the tile (branchless programming techiques boi)
