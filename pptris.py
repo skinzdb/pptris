@@ -107,18 +107,20 @@ class Scene:
                 self.bake()
 
     def checkMove(self, xoff, yoff):
-        if yoff + len(self.selBlook.segments) + self.selBlook.position[1] > PLAYFIELD_HEIGHT:
-            return False
         for y in range(len(self.selBlook.segments)):
             for x in range(len(self.selBlook.segments)):
-                if self.playfield[y + self.selBlook.position[1] + yoff][x + self.selBlook.position[0] + xoff] & self.selBlook.segments[y][x]:
+                try:
+                    if self.selBlook.segments[y][x] and self.playfield[y + self.selBlook.position[1] + yoff][x + self.selBlook.position[0] + xoff]:
+                        return False
+                except IndexError:
                     return False
         return True
 
     def bake(self):
         for y in range(len(self.selBlook.segments)):
             for x in range(len(self.selBlook.segments)):
-                self.playfield[y + self.selBlook.position[1]][x + self.selBlook.position[0]] |= self.selBlook.segments[y][x]
+                if self.selBlook.segments[y][x]:
+                    self.playfield[y + self.selBlook.position[1]][x + self.selBlook.position[0]] = 1
         self.selBlook = self.nextBlook
         self.nextBlook = makeRandomBlock()
 
