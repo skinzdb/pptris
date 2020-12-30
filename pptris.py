@@ -122,27 +122,20 @@ class Scene:
             else:
                 self.bake() #set block in place
 
-                clearY = 0
-                clearLines = 1
-                for i in range(PLAYFIELD_HEIGHT):
-                    if self.playfield[i] == [[1] * PLAYFIELD_WIDTH]:
-                        print("POO")
-                        clearY = i
-                        break
-                    return
-
-                for i in range(1, 4):
-                    if self.playfield[clearY + i] == [[1] * PLAYFIELD_WIDTH]:
-                        clearLines += 1
-                    else:
-                        break
-
-                while (clearY >= clearLines - 1):
-                    self.playfield[clearY] = self.playfield[clearY - clearLines] 
-                    clearY -= 1
-
-                for i in range(clearLines):
-                    self.playfield[i] = [[0] * PLAYFIELD_WIDTH]
+    def clear(self):
+        baseIndex = topIndex = PLAYFIELD_HEIGHT-1
+        while baseIndex >= 0:
+            layer = [0]*PLAYFIELD_WIDTH
+            if topIndex >= 0:
+                if [1] * PLAYFIELD_WIDTH == self.playfield[topIndex]:
+                    print("full")
+                    topIndex -= 1
+                    continue
+                layer = self.playfield[topIndex]
+            print(baseIndex, topIndex)
+            self.playfield[baseIndex] = layer
+            baseIndex-=1
+            topIndex-=1
                           
     def checkMove(self, xoff, yoff, rotate = "none"):
         sb = self.selBlook
@@ -167,6 +160,7 @@ class Scene:
             for x in range(len(self.selBlook.segments)):
                 if self.selBlook.segments[y][x]:
                     self.playfield[y + self.selBlook.position[1]][x + self.selBlook.position[0]] = 1
+        self.clear()
         self.selBlook = self.nextBlook
         self.nextBlook = makeRandomBlock()
         if not self.checkMove(0,0):
