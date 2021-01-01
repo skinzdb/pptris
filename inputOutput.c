@@ -18,7 +18,7 @@ typedef struct {
     uint8_t r, g, b;
 } Colour;
 
-const uint32_t digitMap[10] = {0x6999996, 0x2622227, 0x699224F, 0x6916196, 0x0266AF2, 0xF8AD196, 0x698E996, 0xF922488, 0x6996996, 0x6997296};
+const uint32_t digitMap[10] = {0x6999996, 0x2622227, 0x699224F, 0x6916196, 0x2266AF2, 0xF8AD196, 0x698E996, 0xF922488, 0x6996996, 0x6997196};
 
 const Colour colours[] = {{0,0,0}, {255,255,255}};
 
@@ -143,11 +143,36 @@ void IOManager_draw_playfield(void* _ioMan, uint_fast8_t x, uint_fast8_t y, uint
             ((uint32_t*)ioMan->surf->pixels)[startx + SCREEN_WIDTH * (starty + i)] = colBlack;
     }
 }
+
+void drawDigit(void* _ioMan, uint_fast16_t x, uint_fast16_t y, uint_fast8_t digit) {
+#ifdef PPDEBUG
+    if(x >= SCREEN_WIDTH-10 || y >= SCREEN_HEIGHT - 14 || digit >= 10){
+        printf("error IOManager_draw_next %li, %li, %i", x, y, digit);
+        exit(-1);
+    }
+#endif
+    IOManager* ioMan = _ioMan;
+    uint32_t col = SDL_MapRGB(ioMan->surf->format, 255, 255, 255);
+    uint32_t colBlack = SDL_MapRGB(ioMan->surf->format, 0, 0, 0);
+    uint32_t dig = digitMap[digit];
+    for(int i = 12; i >= 0; i-=2) {
+        for(int j = 6; j >= 0; j-=2) {
+            uint32_t mcol = (dig&1) ? col : colBlack;
+            ((uint32_t*)ioMan->surf->pixels)[x + j +     SCREEN_WIDTH * (y + i    )] = mcol;
+            ((uint32_t*)ioMan->surf->pixels)[x + j +     SCREEN_WIDTH * (y + i + 1)] = mcol;
+            ((uint32_t*)ioMan->surf->pixels)[x + j + 1 + SCREEN_WIDTH * (y + i    )] = mcol;
+            ((uint32_t*)ioMan->surf->pixels)[x + j + 1 + SCREEN_WIDTH * (y + i + 1)] = mcol;
+            dig>>=1;
+        }
+    }
+}
+
 void IOManager_draw_score(void* _ioMan, uint32_t score)
 {
-    //IOManager* ioMan = _ioMan;
-    //uint32_t col = SDL_MapRGB(ioMan->surf->format, 255, 255, 255);
-    //uint32_t colBlack = SDL_MapRGB(ioMan->surf->format, 0, 0, 0);
+    for(int i = 7; i >=0; --i) {
+        drawDigit(_ioMan, 220 + i*10, 10, score%10);
+        score /= 10;
+    }
     
 }
 void IOManager_draw_next(void* _ioMan, uint_fast8_t x, uint_fast8_t y, uint_fast8_t colour)
@@ -165,7 +190,7 @@ void IOManager_draw_next(void* _ioMan, uint_fast8_t x, uint_fast8_t y, uint_fast
     int starty = 30+y*20;
     for (int i = 0; i < 20; ++i) {
         for (int j = 0; j < 20; ++j) {
-            ((uint32_t*)ioMan->surf->pixels)[startx + x + SCREEN_WIDTH * (starty + j)] = col;
+            ((uint32_t*)ioMan->surf->pixels)[startx + i + SCREEN_WIDTH * (starty + j)] = col;
         }
     }
     for (int i = 0; i < 20; ++i) {
@@ -175,6 +200,7 @@ void IOManager_draw_next(void* _ioMan, uint_fast8_t x, uint_fast8_t y, uint_fast
             ((uint32_t*)ioMan->surf->pixels)[startx + SCREEN_WIDTH * (starty + i)] = colBlack;
     }
 }
+
 void IOManager_draw_held(void* _ioMan, uint_fast8_t x, uint_fast8_t y, uint_fast8_t colour)
 {   
 #ifdef PPDEBUG

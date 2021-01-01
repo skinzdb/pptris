@@ -22,6 +22,18 @@ void * io_manager;
  */
 void setup() {
     io_manager = IOManager_create();
+    IOManager_draw_score(io_manager, 499);
+    for(int i = 0; i < PLAYFIELD_WIDTH; ++i) {
+        for(int j = 0; j < PLAYFIELD_HEIGHT; ++j) {
+            IOManager_draw_playfield(io_manager, i, j, 0);
+        }
+    }
+    for(int i = 0; i < 4; ++i) {
+        for(int j = 0; j < 4; ++j) {
+            IOManager_draw_next(io_manager, i, j, 0);
+            IOManager_draw_held(io_manager, i, j, 0);
+        }
+    }
 }
 /**
  * loop to emulate arduino ide
