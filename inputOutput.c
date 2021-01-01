@@ -120,6 +120,12 @@ bool IOManager_hard_drop_pressed(void* _ioMan)
 
 void IOManager_draw_playfield(void* _ioMan, uint_fast8_t x, uint_fast8_t y, uint_fast8_t colour)
 {
+#ifdef PPDEBUG
+    if(x >= PLAYFIELD_WIDTH || y >= PLAYFIELD_HEIGHT || colour > 1){
+        printf("error IOManager_draw_next %i, %i, %i", x, y, colour);
+        exit(-1);
+    }
+#endif
     IOManager* ioMan = _ioMan;
     uint32_t col = SDL_MapRGB(ioMan->surf->format, colours[colour].r, colours[colour].g, colours[colour].b);
     uint32_t colBlack = SDL_MapRGB(ioMan->surf->format, 0, 0, 0);
@@ -137,17 +143,21 @@ void IOManager_draw_playfield(void* _ioMan, uint_fast8_t x, uint_fast8_t y, uint
             ((uint32_t*)ioMan->surf->pixels)[startx + SCREEN_WIDTH * (starty + i)] = colBlack;
     }
 }
-void IOManager_draw_score(void* _ioMan, uint_fast8_t x, uint_fast8_t y, uint32_t score)
+void IOManager_draw_score(void* _ioMan, uint32_t score)
 {
-    IOManager* ioMan = _ioMan;
-    uint32_t col = SDL_MapRGB(ioMan->surf->format, 255, 255, 255);
-    uint32_t colBlack = SDL_MapRGB(ioMan->surf->format, 0, 0, 0);
-    int startx = 220+x*20;
-    int starty = 10+y*20;
+    //IOManager* ioMan = _ioMan;
+    //uint32_t col = SDL_MapRGB(ioMan->surf->format, 255, 255, 255);
+    //uint32_t colBlack = SDL_MapRGB(ioMan->surf->format, 0, 0, 0);
     
 }
 void IOManager_draw_next(void* _ioMan, uint_fast8_t x, uint_fast8_t y, uint_fast8_t colour)
 {
+#ifdef PPDEBUG
+    if(x >= 4 || y >= 4 || colour > 1){
+        printf("error IOManager_draw_next %i, %i, %i", x, y, colour);
+        exit(-1);
+    }
+#endif
     IOManager* ioMan = _ioMan;
     uint32_t col = SDL_MapRGB(ioMan->surf->format, colours[colour].r, colours[colour].g, colours[colour].b);
     uint32_t colBlack = SDL_MapRGB(ioMan->surf->format, 0, 0, 0);
@@ -166,7 +176,13 @@ void IOManager_draw_next(void* _ioMan, uint_fast8_t x, uint_fast8_t y, uint_fast
     }
 }
 void IOManager_draw_held(void* _ioMan, uint_fast8_t x, uint_fast8_t y, uint_fast8_t colour)
-{
+{   
+#ifdef PPDEBUG
+    if(x >= 4 || y >= 4 || colour > 1){
+        printf("error IOManager_draw_held %i, %i, %i", x, y, colour);
+        exit(-1);
+    }
+#endif
     IOManager* ioMan = _ioMan;
     uint32_t col = SDL_MapRGB(ioMan->surf->format, colours[colour].r, colours[colour].g, colours[colour].b);
     uint32_t colBlack = SDL_MapRGB(ioMan->surf->format, 0, 0, 0);

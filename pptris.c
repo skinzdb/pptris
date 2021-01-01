@@ -2,8 +2,6 @@
 #include <stdio.h>
 #include "inputOutput.h"
 
-#define PLAYFIELD_WIDTH 10
-#define PLAYFIELD_HEIGHT 20
 
 typedef struct {
     uint_fast8_t* segments;
