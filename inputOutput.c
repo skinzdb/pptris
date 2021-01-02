@@ -173,31 +173,37 @@ bool IOManager_hard_drop_pressed(void* _ioMan)
     IOManager* ioMan = _ioMan;
     return ioMan->keys & 0x20;
 }
+
 bool IOManager_right_was_pressed(void* _ioMan) 
 {
     IOManager* ioMan = _ioMan;
     return ioMan->keys_old & 0x01;
 }
+
 bool IOManager_left_was_pressed(void* _ioMan) 
 {
     IOManager* ioMan = _ioMan;
     return ioMan->keys_old & 0x02;
 }
+
 bool IOManager_anticlockwise_was_pressed(void* _ioMan) 
 {
     IOManager* ioMan = _ioMan;
     return ioMan->keys_old & 0x04;
 }
+
 bool IOManager_clockwise_was_pressed(void* _ioMan) 
 {
     IOManager* ioMan = _ioMan;
     return ioMan->keys_old & 0x08;
 }
+
 bool IOManager_swap_was_pressed(void* _ioMan) 
 {
     IOManager* ioMan = _ioMan;
     return ioMan->keys_old & 0x10;
 }
+
 bool IOManager_hard_drop_was_pressed(void* _ioMan) 
 {
     IOManager* ioMan = _ioMan;
@@ -262,6 +268,7 @@ void IOManager_draw_score(void* _ioMan, uint32_t score)
     }
     
 }
+
 void IOManager_draw_next(void* _ioMan, uint_fast8_t x, uint_fast8_t y, uint_fast8_t colour)
 {
 #ifdef PPDEBUG
@@ -315,14 +322,63 @@ void IOManager_draw_held(void* _ioMan, uint_fast8_t x, uint_fast8_t y, uint_fast
     }
 }
 
-void audio_player(void* _audio, int8_t* buf, int length) {
+void IOManager_audio_load_track(void* _ioMan, int trackNum, int8_t* buffer, uint32_t length)
+{
+    IOManager* ioMan = _ioMan;
+    SDL_LockMutex(ioMan->audio.muts[trackNum]);
+    ioMan->audio.tracks[trackNum].track_data = buffer;
+    ioMan->audio.tracks[trackNum].track_length = length;
+    ioMan->audio.tracks[trackNum].read_head = 0;
+    SDL_UnlockMutex(ioMan->audio.muts[trackNum]);
+}
+
+bool IOManager_audio_is_playing(void* _ioMan, int trackNum)
+{
+    IOManager* ioMan = _ioMan;
+    SDL_LockMutex(ioMan->audio.muts[trackNum]);
+    bool playing = ioMan->audio.tracks[trackNum].playing;
+    SDL_UnlockMutex(ioMan->audio.muts[trackNum]);
+    return playing;
+}
+
+void IOManager_audio_play(void* _ioMan, int trackNum, bool loop)
+{
+    IOManager* ioMan = _ioMan;
+    SDL_LockMutex(ioMan->audio.muts[trackNum]);
+    ioMan->audio.tracks[trackNum].playing = true;
+    ioMan->audio.tracks[trackNum].loop = loop;
+    SDL_UnlockMutex(ioMan->audio.muts[trackNum]);
+}
+
+void IOManager_audio_stop(void* _ioMan, int trackNum)
+{
+    IOManager* ioMan = _ioMan;
+    SDL_LockMutex(ioMan->audio.muts[trackNum]);
+    ioMan->audio.tracks[trackNum].playing = false;
+    ioMan->audio.tracks[trackNum].read_head = 0;
+    SDL_UnlockMutex(ioMan->audio.muts[trackNum]);
+}
+
+void IOManager_audio_pause(void* _ioMan, int trackNum)
+{
+    IOManager* ioMan = _ioMan;
+    SDL_LockMutex(ioMan->audio.muts[trackNum]);
+    ioMan->audio.tracks[trackNum].playing = false;
+    SDL_UnlockMutex(ioMan->audio.muts[trackNum]);
+}
+
+void audio_player(void* _audio, int8_t* buf, int length) 
+{
     AudioManager* audio = _audio;
     for (int i = 0; i < length; ++i) {
-        int acc = 0;
-        for(int j = 0; j < NUM_AUDIO_TRACKS; ++j) {
-            SDL_LockMutex(audio->muts[j]);
+        buf[i] = 0;
+    }
+    for(int j = 0; j < NUM_AUDIO_TRACKS; ++j) {
+        SDL_LockMutex(audio->muts[j]);
+        for (int i = 0; i < length; ++i) {
+            int sample = buf[i];
             if(audio->tracks[j].playing) {
-                acc += audio->tracks[j].track_data[audio->tracks[j].read_head++];
+                sample = audio->tracks[j].track_data[audio->tracks[j].read_head++];
                 if(audio->tracks[j].read_head >= audio->tracks[j].track_length) {
                     if(audio->tracks[j].loop){
                         audio->tracks[j].read_head = 0;
@@ -331,15 +387,17 @@ void audio_player(void* _audio, int8_t* buf, int length) {
                         audio->tracks[j].playing = false;
                     }
                 }
+                sample = (sample > 127) ? 127 : sample;
+                buf[i] = (sample < -128) ? -128 : sample;
             }
-            SDL_UnlockMutex(audio->muts[j]);
         }
+        SDL_UnlockMutex(audio->muts[j]);
 
-        acc = (acc > 127) ? 127 : acc;
-        acc = (acc < -128) ? -128 : acc;
-        buf[i] = acc;
     }
-
+    for (int i = 0; i < length; ++i) {
+        printf("%i, ", buf[i]);
+    }
+    printf("\n");
 }
 
 //setup, loop and main for opetating system versions

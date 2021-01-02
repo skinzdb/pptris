@@ -28,3 +28,9 @@ void IOManager_draw_playfield(void* _ioMan, uint_fast8_t x, uint_fast8_t y, uint
 void IOManager_draw_score(void* _ioMan, uint32_t score);
 void IOManager_draw_next(void* _ioMan, uint_fast8_t x, uint_fast8_t y, uint_fast8_t colour);
 void IOManager_draw_held(void* _ioMan, uint_fast8_t x, uint_fast8_t y, uint_fast8_t colour);
+
+void IOManager_audio_load_track(void* _ioMan, int trackNum, int8_t* buffer, uint32_t length);
+bool IOManager_audio_is_playing(void* _ioMan, int trackNum);
+void IOManager_audio_play(void* _ioMan, int trackNum, bool loop);
+void IOManager_audio_stop(void* _ioMan, int trackNum);
+void IOManager_audio_pause(void* _ioMan, int trackNum);
