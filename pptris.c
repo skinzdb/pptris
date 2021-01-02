@@ -22,7 +22,7 @@ void * io_manager;
  */
 void setup() {
     io_manager = IOManager_create();
-    IOManager_draw_score(io_manager, 499);
+    IOManager_draw_score(io_manager, 12345678);
     for(int i = 0; i < PLAYFIELD_WIDTH; ++i) {
         for(int j = 0; j < PLAYFIELD_HEIGHT; ++j) {
             IOManager_draw_playfield(io_manager, i, j, 0);
@@ -40,14 +40,14 @@ void setup() {
  * shouldnt be bool but os's need an exit
  */
 void loop() {
-    if(IOManager_anticlockwise_pressed(io_manager)){
+    if(IOManager_anticlockwise_pressed(io_manager) && !IOManager_anticlockwise_was_pressed(io_manager)){
         IOManager_draw_playfield(io_manager, 0,0,1);
     }
-    else {
+    else if ((!IOManager_anticlockwise_pressed(io_manager)) && IOManager_anticlockwise_was_pressed(io_manager)){
         IOManager_draw_playfield(io_manager, 0,0,0);
     }
-    IOManager_process(io_manager);
 
+    IOManager_process(io_manager);
 }
 
 

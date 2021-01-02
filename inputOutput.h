@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define X86
 #define PLAYFIELD_WIDTH 10
 #define PLAYFIELD_HEIGHT 20
 #define PPDEBUG
@@ -17,6 +16,13 @@ bool IOManager_clockwise_pressed(void* _ioMan);
 bool IOManager_anticlockwise_pressed(void* _ioMan);
 bool IOManager_swap_pressed(void* _ioMan);
 bool IOManager_hard_drop_pressed(void* _ioMan);
+
+bool IOManager_right_was_pressed(void* _ioMan);
+bool IOManager_left_was_pressed(void* _ioMan);
+bool IOManager_clockwise_was_pressed(void* _ioMan);
+bool IOManager_anticlockwise_was_pressed(void* _ioMan);
+bool IOManager_swap_was_pressed(void* _ioMan);
+bool IOManager_hard_drop_was_pressed(void* _ioMan);
 
 void IOManager_draw_playfield(void* _ioMan, uint_fast8_t x, uint_fast8_t y, uint_fast8_t colour);
 void IOManager_draw_score(void* _ioMan, uint32_t score);
