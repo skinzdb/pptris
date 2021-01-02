@@ -378,7 +378,7 @@ void audio_player(void* _audio, int8_t* buf, int length)
         for (int i = 0; i < length; ++i) {
             int sample = buf[i];
             if(audio->tracks[j].playing) {
-                sample = audio->tracks[j].track_data[audio->tracks[j].read_head++];
+                sample += audio->tracks[j].track_data[audio->tracks[j].read_head++];
                 if(audio->tracks[j].read_head >= audio->tracks[j].track_length) {
                     if(audio->tracks[j].loop){
                         audio->tracks[j].read_head = 0;

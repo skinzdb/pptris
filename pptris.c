@@ -16,7 +16,9 @@ Block next_block;
 Block stored_block;
 
 void * io_manager;
-int8_t sawBuffer[128];
+int8_t sawBuffer[64];
+int8_t sawBuffer2[128];
+int8_t sawBuffer3[256];
 /**
  * setup to emulate arduino ide
  */
@@ -35,7 +37,11 @@ void setup() {
         }
     }
     for(int i = 0; i < 256; i+=4) sawBuffer[i>>2] = i-128;
+    for(int i = 0; i < 256; i+=2) sawBuffer2[i>>1] = i-128;
+    for(int i = 0; i < 256; i+=1) sawBuffer3[i] = i-128;
     IOManager_audio_load_track(io_manager, 0, sawBuffer, 64);
+    IOManager_audio_load_track(io_manager, 1, sawBuffer2, 128);
+    IOManager_audio_load_track(io_manager, 2, sawBuffer3, 256);
 }
 /**
  * loop to emulate arduino ide
@@ -45,10 +51,14 @@ void loop() {
     if(IOManager_anticlockwise_pressed(io_manager) && !IOManager_anticlockwise_was_pressed(io_manager)){
         IOManager_draw_playfield(io_manager, 0,0,1);
         IOManager_audio_play(io_manager, 0, true);
+        IOManager_audio_play(io_manager, 1, true);
+        IOManager_audio_play(io_manager, 2, true);
     }
     else if ((!IOManager_anticlockwise_pressed(io_manager)) && IOManager_anticlockwise_was_pressed(io_manager)){
         IOManager_draw_playfield(io_manager, 0,0,0);
         IOManager_audio_stop(io_manager, 0);
+        IOManager_audio_stop(io_manager, 1);
+        IOManager_audio_stop(io_manager, 2);
     }
 
     IOManager_process(io_manager);
