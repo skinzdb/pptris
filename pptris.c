@@ -15,14 +15,16 @@ typedef struct {
 } Block;
 
 void clear();
+void bake();
 int check_move(int xoff, int yoff, Rotation rotate);
 void update();
-void random_block(Block b);
+void random_block(Block* b);
 void left();
 void right();
 void rotate(Rotation rotation);
 
-uint_fast8_t blocks[][4][4] = {
+//bits go from right to left so think you might need the low nibbles(unless youre doing something im not seeing)
+const uint_fast8_t blocks[][4][4] = {//i got to use the word nibble
     {{0xC0, 0xC0, 0x00, 0x00}, // O
      {0xC0, 0xC0, 0x00, 0x00},
      {0xC0, 0xC0, 0x00, 0x00},
@@ -66,7 +68,8 @@ uint_fast8_t blocks[][4][4] = {
     },
 };
 
-int defaultPositions[7][2] = {
+//a part of me wants bytes or uint_fast8_t but thats the bad person part of me
+const int defaultPositions[7][2] = {
     {4,0},
     {3,0},
     {3,0},
@@ -89,7 +92,7 @@ void clear() {
     while (base_index >= 0) {
         uint_fast16_t layer = 0;
         if (top_index >= 0) {
-            if (playfield[base_index] = 0xFFFF) { // full layer
+            if (playfield[base_index] == ((1<<PLAYFIELD_WIDTH) - 1)) { // full layer
                 top_index--;
                 continue;
             }
@@ -103,10 +106,11 @@ void clear() {
 
 int check_move(int xoff, int yoff, Rotation rotate) {
     for (int i = 0; i < 4; i++) {
-        if (blocks[sel_block.type][sel_block.rot + rotate][i] & playfield[sel_block.y + yoff + i] || xoff < 0) {
+        if (blocks[sel_block.type][sel_block.rot + rotate][i] & playfield[sel_block.y + yoff + i] || xoff < 0) {//might need some shifts and the x check at the start
             return 0;
-            }
         }
+    }
+    return 1;
 }
 
 void update() {
@@ -125,17 +129,17 @@ void bake() {
         playfield[sel_block.y + i] |= blocks[sel_block.type][sel_block.rot][i];
     }
     sel_block = next_block;
-    random_block(next_block);
+    random_block(&next_block);
     
     if (!check_move(0, 0, NONE)) {
         //game over
     }
 }
 
-void random_block(Block b) {
-    b.type = rand() % 7;
-    b.rot = 0;
-    b.x = b.y = 0;
+void random_block(Block* b) {
+    b->type = rand() % 7;
+    b->rot = 0;
+    b->x = b->y = 0;
 }
 
 void left() {
@@ -151,23 +155,23 @@ void down() {
 }
 
 void rotate(Rotation rotation) {
-    sel_block.rot = (sel_block.rot + rotation) % 4;
+    sel_block.rot = (sel_block.rot + rotation + 4) % 4;//nagitive numbers and % are a pain in the ass
 }
 
 void hard_drop() {
-    for (; check_move(0, 1, NONE); sel_block.y++);
+    for (; check_move(0, 1, NONE); sel_block.y++);//think this is a line too low (unsure)
     bake();
 }
 
-int main() {
+int main2() {
     frames = 0;
 
-    random_block(sel_block);
-    random_block(next_block);
+    random_block(&sel_block);
+    random_block(&next_block);
 
     while (1) {
         update();
-        delay(16);
+        //delay(16);
     }
 }
 
