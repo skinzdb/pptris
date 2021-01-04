@@ -109,7 +109,7 @@ int check_move(int xoff, int yoff, Rotation rotate) {
         uint_fast8_t shape = blocks[sel_block.type][sel_block.rot + rotate][i];
         int ypos = sel_block.y + i;
         if(ypos >= PLAYFIELD_HEIGHT){
-            if(shape) {
+            if(shape){
                 return 0;
             }
         }
