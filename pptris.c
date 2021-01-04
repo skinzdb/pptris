@@ -106,8 +106,19 @@ void clear() {
 
 int check_move(int xoff, int yoff, Rotation rotate) {
     for (int i = 0; i < 4; i++) {
-        if (blocks[sel_block.type][sel_block.rot + rotate][i] & playfield[sel_block.y + yoff + i] || xoff < 0) {//might need some shifts and the x check at the start
-            return 0;
+        uint_fast8_t shape = blocks[sel_block.type][sel_block.rot + rotate][i];
+        int ypos = sel_block.y + i;
+        if(ypos >= PLAYFIELD_HEIGHT){
+            if(shape){
+                return 0;
+            }
+        }
+        else {
+             uint_fast16_t line = playfield[ypos];
+            int offset = sel_block.x + xoff;
+            if ((((line << 3) | 0x2004) >> (offset + 3)) & shape) {
+                return 0;
+            }
         }
     }
     return 1;
