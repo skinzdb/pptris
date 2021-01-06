@@ -29,6 +29,7 @@ typedef struct {
     bool playing;
     bool loop;
     int8_t* track_data;
+    uint8_t volume;
     uint32_t track_length;
     uint32_t read_head;
 } AudioTrack;
@@ -53,12 +54,12 @@ void intmalloc(uint32_t* arr, uint32_t n, uint32_t len) {
 }
 
 void init_audio(AudioManager* audio);
-void audio_player(void* audio, int8_t* buf, int length);
+void audio_player(void* audio, int16_t* buf, int length);
 
 void* IOManager_create()
 {
     if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {
-        printf("bad init\n");
+        ppf("bad init\n");
         exit(-1);
     }
     IOManager* ioMan = malloc(sizeof(IOManager));
@@ -81,7 +82,7 @@ void init_audio(AudioManager* audio)
 {
     SDL_AudioSpec spec;
     spec.freq = 44100;
-    spec.format = AUDIO_S8;
+    spec.format = AUDIO_S16;
     spec.channels = 1;
     spec.samples = 128;
     spec.callback = audio_player;
@@ -94,6 +95,7 @@ void init_audio(AudioManager* audio)
         audio->tracks[i].track_data = NULL;
         audio->tracks[i].read_head = 0;
         audio->tracks[i].track_length = 0;
+        audio->tracks[i].volume = 64;
     }
 	SDL_PauseAudio(0);
 }
@@ -109,7 +111,7 @@ void get_key_state(IOManager* ioMan)
     ioMan->keys |= kbState[SDL_SCANCODE_X] << 3;
     ioMan->keys |= kbState[SDL_SCANCODE_C] << 4;
     ioMan->keys |= kbState[SDL_SCANCODE_SPACE] << 5;
-    //printf("%X %X\n", ioMan->keys_old, ioMan->keys);
+    //ppf("%X %X\n", ioMan->keys_old, ioMan->keys);
 }
 
 void IOManager_process(void* _ioMan)
@@ -214,7 +216,7 @@ void IOManager_draw_playfield(void* _ioMan, uint_fast8_t x, uint_fast8_t y, uint
 {
 #ifdef PPDEBUG
     if(x >= PLAYFIELD_WIDTH || y >= PLAYFIELD_HEIGHT || colour >= numColours){
-        printf("error IOManager_draw_next %i, %i, %i", x, y, colour);
+        ppf("error IOManager_draw_playfield %i, %i, %i", x, y, colour);
         exit(-1);
     }
 #endif
@@ -239,7 +241,7 @@ void IOManager_draw_playfield(void* _ioMan, uint_fast8_t x, uint_fast8_t y, uint
 void drawDigit(void* _ioMan, uint_fast16_t x, uint_fast16_t y, uint_fast8_t digit) {
 #ifdef PPDEBUG
     if(x >= SCREEN_WIDTH-10 || y >= SCREEN_HEIGHT - 14 || digit >= 10){
-        printf("error IOManager_draw_next %li, %li, %i", x, y, digit);
+        ppf("error IOManager_draw_Digit %li, %li, %i\n", x, y, digit);
         exit(-1);
     }
 #endif
@@ -273,7 +275,7 @@ void IOManager_draw_next(void* _ioMan, uint_fast8_t x, uint_fast8_t y, uint_fast
 {
 #ifdef PPDEBUG
     if(x >= 4 || y >= 4 || colour >= numColours){
-        printf("error IOManager_draw_next %i, %i, %i", x, y, colour);
+        ppf("error IOManager_draw_next %i, %i, %i\n", x, y, colour);
         exit(-1);
     }
 #endif
@@ -299,7 +301,7 @@ void IOManager_draw_held(void* _ioMan, uint_fast8_t x, uint_fast8_t y, uint_fast
 {   
 #ifdef PPDEBUG
     if(x >= 4 || y >= 4 || colour >= numColours){
-        printf("error IOManager_draw_held %i, %i, %i", x, y, colour);
+        ppf("error IOManager_draw_held %i, %i, %i\n", x, y, colour);
         exit(-1);
     }
 #endif
@@ -367,7 +369,7 @@ void IOManager_audio_pause(void* _ioMan, int trackNum)
     SDL_UnlockMutex(ioMan->audio.muts[trackNum]);
 }
 
-void audio_player(void* _audio, int8_t* buf, int length) 
+void audio_player(void* _audio, int16_t* buf, int length) 
 {
     AudioManager* audio = _audio;
     for (int i = 0; i < length; ++i) {
@@ -378,7 +380,7 @@ void audio_player(void* _audio, int8_t* buf, int length)
         for (int i = 0; i < length; ++i) {
             int sample = buf[i];
             if(audio->tracks[j].playing) {
-                sample += audio->tracks[j].track_data[audio->tracks[j].read_head++];
+                sample += audio->tracks[j].track_data[audio->tracks[j].read_head++] * audio->tracks[j].volume;
                 if(audio->tracks[j].read_head >= audio->tracks[j].track_length) {
                     if(audio->tracks[j].loop){
                         audio->tracks[j].read_head = 0;
@@ -387,17 +389,13 @@ void audio_player(void* _audio, int8_t* buf, int length)
                         audio->tracks[j].playing = false;
                     }
                 }
-                sample = (sample > 127) ? 127 : sample;
-                buf[i] = (sample < -128) ? -128 : sample;
+                sample = (sample > 32000) ? 32000 : sample;
+                buf[i] = (sample < -32000) ? -32000 : sample;
             }
         }
         SDL_UnlockMutex(audio->muts[j]);
 
     }
-    for (int i = 0; i < length; ++i) {
-        printf("%i, ", buf[i]);
-    }
-    printf("\n");
 }
 
 //setup, loop and main for opetating system versions
@@ -408,5 +406,6 @@ int main(int iargs, char** vargs) {
     setup();
     while(true) {
         loop();
+        SDL_Delay(15);
     };
 }

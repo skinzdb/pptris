@@ -1,10 +1,13 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 
 #define PLAYFIELD_WIDTH 10
 #define PLAYFIELD_HEIGHT 20
 #define PPDEBUG
+
+#define ppf(f, ...) printf(f, ##__VA_ARGS__);fflush(stdout)
 
 void* IOManager_create();
 void IOManager_process(void* _ioMan);//need a better name
