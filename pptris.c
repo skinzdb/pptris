@@ -95,7 +95,7 @@ Block sel_block;
 Block next_block;
 Block stored_block;
 
-uint8_t frames;
+uint32_t frames;
 uint_fast32_t left_time, right_time, clock_time, aclock_time, h_drop_time, swap_time, s_drop_time;
 uint32_t score;
 
@@ -161,8 +161,8 @@ void bake() {
     if (!check_move(0, 0, NONE)) {
         memset(playfield, 0, sizeof(playfield));
         score = 0;
+        IOManager_draw_score(io_manager, score);
     }
-    
 
 }
 
@@ -286,25 +286,25 @@ void handle_input()
     swap_time   = (swap_time+1)   * IOManager_swap_pressed(io_manager);
     h_drop_time = (h_drop_time+1) * IOManager_hard_drop_pressed(io_manager);
 
-    if(left_time && (left_time+9)/10 != (left_time+8)/10 && check_move(-1, 0, NONE)) {
+    if((left_time+9)/10 != (left_time+8)/10 && check_move(-1, 0, NONE)) {
         sel_block.x--;
     }
-    if(right_time && (right_time+9)/10 != (right_time+8)/10 && check_move(1, 0, NONE)) {
+    if((right_time+9)/10 != (right_time+8)/10 && check_move(1, 0, NONE)) {
         sel_block.x++;
     }
 
-    if(clock_time && (clock_time+9)/10 != (clock_time+8)/10) {
+    if((clock_time+9)/10 != (clock_time+8)/10) {
         rotate_clock();
     }
-    if(aclock_time && (aclock_time+9)/10 != (aclock_time+8)/10) {
+    if((aclock_time+9)/10 != (aclock_time+8)/10) {
         rotate_a_clock();
     }
 
-    if(h_drop_time && (h_drop_time+9)/10 != (h_drop_time+8)/10) {
+    if((h_drop_time+9)/10 != (h_drop_time+8)/10) {
         hard_drop();
     }
 
-    if(swap_time && (swap_time+9)/10 != (swap_time+8)/10) {
+    if((swap_time+9)/10 != (swap_time+8)/10) {
         Block b = stored_block;
         stored_block = next_block;
         next_block = b;
@@ -345,9 +345,8 @@ void setup() {
  */
 void loop() {
     //printf("loop\n");
-    frames = (frames + 1) % 20;
     handle_input();
-    if (frames == 0) {
+    if (frames++ % 20 == 0) {
         if (check_move(0, 1, NONE)) { 
             sel_block.y++;
         } else {
