@@ -14,13 +14,16 @@ INPUT_DELAY = 1
 LR_DELAY = 10
 
 NONE   = (0, 0, 0)
+L_GREY = (128, 128, 128)
+D_GREY = (32, 32, 32)
+WHITE  = (255, 255, 255)
 RED    = (255, 0, 0)
 ORANGE = (255, 165, 0)
 YELLOW = (255, 255, 0)
 GREEN  = (0, 255, 0)
 L_BLUE = (0, 255, 255)
 D_BLUE = (0, 0, 255)
-PURPLE = (128, 0, 128)
+PURPLE = (139, 0, 139)
 
 COLOUR_MAP = {
     NONE    : 0,
@@ -49,7 +52,7 @@ TETRONIMOES = [
     Tetronimo("I", L_BLUE, [0x0F00, 0x2222, 0x00F0, 0x4444]), 
 ]
 
-JLTSZ_WALL_KICKS = [
+JLTSZ_WALL_KICKS = [ # If a tetronimo gets rotated outside the playing field, try and 'kick' it back into a legal position using these offsets
     [( 0, 0), (-1, 0), (-1,-1), ( 0, 2), (-1, 2)], # 0>>1
     [( 0, 0), ( 1, 0), ( 1, 1), ( 0,-2), ( 1,-2)], # 1>>2
     [( 0, 0), ( 1, 0), ( 1,-1), ( 0, 2), ( 1, 2)], # 2>>3
@@ -75,6 +78,7 @@ class Game:
     stick_time = STICK_FRAMES
 
     new_tetronimo = False
+    gameover = False
 
     grid = []
     baked_grid = []
@@ -102,7 +106,12 @@ class Game:
             self.stick_time -= 15
 
     def hard_down(self):
-        pass
+        if self.curr_tetronimo != None:
+            while self.check_move(0, 1):
+                self.ypos += 1
+            self.bake()
+            self.add()
+            self.update_grid()
 
     def rotate(self, direction=CLOCKWISE):
         if self.curr_tetronimo == None:
@@ -141,6 +150,9 @@ class Game:
         return 0 <= x < GRID_WIDTH and 0 <= y < GRID_HEIGHT
 
     def add(self):  # Spawn new tetronimo at top of screen
+        if self.gameover:
+            return
+
         self.xpos = START_POS[0]
         self.ypos = START_POS[1] 
         self.rotation = 0
@@ -150,8 +162,10 @@ class Game:
         if self.curr_tetronimo.name == "I":
             self.ypos += 1   
 
-        if self.baked_grid[2] == 0x3FFFFFFF: # TODO: Use |= and see if it has changed  Newly spawned piece is blocked out, move it up by one.
-            self.ypos -= 1
+        for i in range(GRID_WIDTH): # If newly spawned piece is blocked out, move it up by one.
+            if self.get_tile(i, 2) & self.get_baked_tile(i, 2) > 0:
+                self.ypos -= 1
+                break
 
     def update_grid(self):
         for j in range(GRID_HEIGHT):
@@ -165,23 +179,19 @@ class Game:
                         self.grid[self.ypos + j] |= data << ((self.xpos + i) * 3)
                 
     def update(self, frames):
-        if frames >= self.update_speed:
-            if self.new_tetronimo:
-                self.add()
-                self.new_tetronimo = False
-            else:
-                if self.check_move(0, 1, self.rotation):
-                    self.down()
+        if not self.gameover:
+            if frames >= self.update_speed:
+                if self.new_tetronimo:
+                    self.add()
+                    self.new_tetronimo = False
                 else:
-                    self.stick_time -= 60
-            self.update_grid()
-            frames = 0
+                    self.down()
+                self.update_grid()
+                frames = 0
 
-        if self.stick_time <= 0 and not self.new_tetronimo:
-            self.bake()
-            self.curr_tetronimo = None
-            self.new_tetronimo = True
-            self.update_grid()
+            if self.stick_time <= 0 and not self.new_tetronimo and not self.check_move(0, 1):
+                self.bake()
+                self.new_tetronimo = True
 
         return frames
 
@@ -190,8 +200,12 @@ class Game:
             for i in range(4):
                 if self.within_grid(self.xpos + i, self.ypos + j) and not self.get_baked_tile(self.xpos + i, self.ypos + j) and self.is_filled(i, j, self.rotation):
                     self.baked_grid[self.ypos + j] |= 7 << ((self.xpos + i) * 3)
-        self.check_gameover()
-        self.clear_rows()
+        self.gameover = self.check_gameover()
+        if not self.gameover:
+            self.clear_rows()
+        self.curr_tetronimo = None
+ 
+        self.update_grid()
     
     def check_gameover(self):
         return self.baked_grid[1] > 0
@@ -219,9 +233,16 @@ class Game:
         self.add()
         self.update_grid()
 
+def draw_rect(screen, left, top, width, height, fill, border=NONE, border_width=0):
+    pygame.draw.rect(screen, border, pygame.Rect(left, top, width, height))
+    pygame.draw.rect(screen, fill, pygame.Rect(left + border_width, top + border_width, width - border_width, height - border_width))
+
 pygame.init()
 clock = pygame.time.Clock()
 screen = pygame.display.set_mode([400, 600])
+
+font = pygame.font.SysFont(None, 48)
+img = font.render('GAME OVER', True, WHITE)
 
 running = True
 frames = 0
@@ -238,13 +259,19 @@ while running:
 
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_UP:
-                game.rotate()
+                game.rotate(CLOCKWISE)
+            if event.key == pygame.K_z:
+                game.rotate(ANTICLOCKWISE)
             if event.key == pygame.K_LEFT:
                 game.left()
                 lr_pressed = True
             if event.key == pygame.K_RIGHT:
                 game.right()
                 lr_pressed = True
+            if event.key == pygame.K_SPACE:
+                game.hard_down()
+            if event.key == pygame.K_c: # TODO: store a piece
+                pass
         elif event.type == pygame.KEYUP:
             if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
                 lr_pressed = False
@@ -262,13 +289,19 @@ while running:
             game.down()
 
     screen.fill((144, 144, 144))
-
     frames = game.update(frames)
 
     for j in range(GRID_HEIGHT - 2):
         for i in range(GRID_WIDTH):
-            pygame.draw.rect(screen, list(COLOUR_MAP.keys())[game.get_tile(i, j + 2)], pygame.Rect(i * 25, j * 25, 25, 25))
-            pygame.draw.rect(screen, list(COLOUR_MAP.keys())[game.get_baked_tile(i, j+2)], pygame.Rect(i * 10 + 275, j * 10, 10, 10))
+            fill = list(COLOUR_MAP.keys())[game.get_tile(i, j + 2)]
+            if game.gameover:
+                fill = NONE if fill == NONE else L_GREY
+            draw_rect(screen, i * 25, j * 25, 25, 25, fill, D_GREY, 1 if fill == NONE else 0)
+
+    if game.gameover:
+        draw_rect(screen, 0, 225, 250, 30, NONE)
+        screen.blit(img, (25, 225))
+
 
     pygame.display.flip()
     
