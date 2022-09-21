@@ -25,7 +25,7 @@ L_BLUE = (0, 255, 255)
 D_BLUE = (0, 0, 255)
 PURPLE = (139, 0, 139)
 
-COLOUR_MAP = {
+COLOUR_MAP = {  # Instead of using a switch statement, made a map between a colour and its value in the grid
     NONE    : 0,
     RED     : 1,
     ORANGE  : 2,
@@ -40,7 +40,13 @@ class Tetronimo:
     def __init__(self, name, colour, data):
         self.name = name
         self.colour = colour
-        self.data = data
+        self.data = data # List of four 16-bit integers, one to store each rotation of the tetronimo 
+                         # Each integer is akin to a 4x4 grid where 0 = blank space, 1 = tetronimo tile. Every group of 4 bits represents a row. The 4 MSBs are the first row.
+        # Example of L tetronimo in its initial rotation:
+        # | 0, 0, 0, 0 |          
+        # | 0, 0, 1, 0 |    ==> 0x02E0
+        # | 1, 1, 1, 0 |
+        # | 0, 0, 0, 0 |
 
 TETRONIMOES = [
     Tetronimo("O", YELLOW, [0x0660, 0x0660, 0x0660, 0x0660]),
@@ -74,17 +80,21 @@ class Game:
     ypos = START_POS[1]
     rotation = 0
 
-    update_speed = INITIAL_SPEED # number of frames before update
-    stick_time = STICK_FRAMES
+    update_speed = INITIAL_SPEED # Number of frames before update
+    stick_time = STICK_FRAMES # Number of frames before tetronimo 'sticks' to the surface it is touching below
 
-    new_tetronimo = False
+    new_tetronimo = False # Flag to wait an update cycle before spawning new tetronimo
     gameover = False
 
-    grid = []
-    baked_grid = []
+    grid = []       # Grid that stores colour information for tetronimos and position of curr_tetronimo
+                    # Each row is a 30-bit (stored as 32 but 2 MSBs aren't used) integer, each 3-bit chunk is a tile
+                    # LSB represents the left side of the screen
+                    # 0b000 = empty tile, 0b001-0b111 = colours for each of the 7 tetronimos
+    baked_grid = [] # Grid that contains tiles that have been placed/'baked'
+                    # 0b000 = unbaked tile, 0b111 = baked tile
 
     def __init__(self):
-        self.grid = [0] * GRID_HEIGHT
+        self.grid = [0] * GRID_HEIGHT # Initialise both grids
         self.baked_grid = [0] * GRID_HEIGHT
         self.reset()
 
@@ -107,8 +117,7 @@ class Game:
 
     def hard_down(self):
         if self.curr_tetronimo != None:
-            while self.check_move(0, 1):
-                self.ypos += 1
+            self.ypos += self.get_gap()
             self.bake()
             self.add()
             self.update_grid()
@@ -117,7 +126,7 @@ class Game:
         if self.curr_tetronimo == None:
             return
 
-        wall_kicks = I_WALL_KICKS if self.curr_tetronimo.name == "I" else JLTSZ_WALL_KICKS
+        wall_kicks = I_WALL_KICKS if self.curr_tetronimo.name == "I" else JLTSZ_WALL_KICKS  # Choose appropriate wall kicks, I is a special case
    
         for x, y in wall_kicks[self.rotation]: # If rotation is an invalid move, try and kick it into a legal position
             if self.check_move(direction * x, direction * y, direction): 
@@ -128,15 +137,21 @@ class Game:
         self.update_grid()
 
     def get_tile(self, x, y):
-        return (self.grid[y] >> (x * 3)) & 7
+        return (self.grid[y] >> (x * 3)) & 7 # 3-bit chunk so move in multiples of 3 (hence x * 3). Only select that chunk (hence & 7)
 
     def get_baked_tile(self, x, y):
-        return (self.baked_grid[y] >> (x * 3)) & 7
+        return (self.baked_grid[y] >> (x * 3)) & 7 
 
-    def is_filled(self, x, y, rot):
+    def is_filled(self, x, y, rot): # Is the tile within the tetronimo data filled or empty (not related to the grid)
         return (self.curr_tetronimo.data[rot] >> (15 - 4 * y - x)) & 1
 
-    def check_move(self, x, y, rot_direction=0): # Check move is valid
+    def get_gap(self): # Get distance between tile's current position and where it can legally be baked
+        yoff = 0
+        while self.check_move(0, yoff + 1):
+            yoff += 1
+        return yoff
+
+    def check_move(self, x, y, rot_direction=0): # Check move doesn't go off-screen and doesn't overlap baked tiles
         if self.curr_tetronimo == None:
             return False
         rot = (self.rotation + rot_direction) % 4
@@ -168,52 +183,57 @@ class Game:
                 break
 
     def update_grid(self):
+        # Only preserve baked tiles, bitwise AND will remove everything else
         for j in range(GRID_HEIGHT):
-           self.grid[j] &= self.baked_grid[j]
+           self.grid[j] &= self.baked_grid[j] 
 
+        # Encode position of curr_tetronimo into the grid
         if self.curr_tetronimo != None: 
             for j in range(4):
                 for i in range(4):
-                    if self.within_grid(self.xpos + i, self.ypos + j):
+                    if self.within_grid(self.xpos + i, self.ypos + j): # If tiles go outside of the grid, don't care about them
                         data = COLOUR_MAP[self.curr_tetronimo.colour] if self.is_filled(i, j, self.rotation) else COLOUR_MAP[NONE]
-                        self.grid[self.ypos + j] |= data << ((self.xpos + i) * 3)
+                        self.grid[self.ypos + j] |= data << ((self.xpos + i) * 3) 
                 
     def update(self, frames):
         if not self.gameover:
-            if frames >= self.update_speed:
+            if frames >= self.update_speed: # Once certain number of frames reached, perform update
                 if self.new_tetronimo:
                     self.add()
                     self.new_tetronimo = False
                 else:
-                    self.down()
+                    if self.check_move(0, 1):
+                        self.down()
                 self.update_grid()
                 frames = 0
+            
+            if not self.check_move(0, 1): # This happens on every frame curr_tetronimo is sticking to tiles below it
+                self.stick_time -= 1
 
             if self.stick_time <= 0 and not self.new_tetronimo and not self.check_move(0, 1):
                 self.bake()
                 self.new_tetronimo = True
 
-        return frames
+        return frames 
 
     def bake(self):
         for j in range(4):
             for i in range(4):
                 if self.within_grid(self.xpos + i, self.ypos + j) and not self.get_baked_tile(self.xpos + i, self.ypos + j) and self.is_filled(i, j, self.rotation):
                     self.baked_grid[self.ypos + j] |= 7 << ((self.xpos + i) * 3)
-        self.gameover = self.check_gameover()
-        if not self.gameover:
+        self.update_grid() # Update grid to add final position of curr_tetronimo
+        self.gameover = self.check_gameover()   
+        if not self.gameover: # Don't bother clearing rows if it's game over
             self.clear_rows()
         self.curr_tetronimo = None
- 
-        self.update_grid()
     
     def check_gameover(self):
-        return self.baked_grid[1] > 0
+        return self.baked_grid[1] > 0 # If the first off-screen row has baked tile inside it then it's gameover
 
     def clear_rows(self):
-        for j in range(GRID_HEIGHT):
-            if self.baked_grid[j] == 0x3FFFFFFF:
-                self.grid.pop(j)
+        for j in range(GRID_HEIGHT): # Not the most efficient way (O(N^2)) but it's simple
+            if self.baked_grid[j] == 0x3FFFFFFF: # 0b00111111111111111111111111111111
+                self.grid.pop(j)    
                 self.grid.insert(0, 0)
                 self.baked_grid.pop(j)
                 self.baked_grid.insert(0, 0)
@@ -223,7 +243,7 @@ class Game:
         self.curr_tetronimo = None
         self.held_tetronimo = None
     
-        self.update_speed = INITIAL_SPEED # number of frames before update
+        self.update_speed = INITIAL_SPEED
         self.stick_time = STICK_FRAMES
 
         for j in range(GRID_HEIGHT):
@@ -233,7 +253,7 @@ class Game:
         self.add()
         self.update_grid()
 
-def draw_rect(screen, left, top, width, height, fill, border=NONE, border_width=0):
+def draw_rect(screen, left, top, width, height, fill, border=NONE, border_width=0): # Helper function to draw rects with borders
     pygame.draw.rect(screen, border, pygame.Rect(left, top, width, height))
     pygame.draw.rect(screen, fill, pygame.Rect(left + border_width, top + border_width, width - border_width, height - border_width))
 
@@ -242,7 +262,10 @@ clock = pygame.time.Clock()
 screen = pygame.display.set_mode([400, 600])
 
 font = pygame.font.SysFont(None, 48)
-img = font.render('GAME OVER', True, WHITE)
+gameover_img = font.render('GAME OVER', True, WHITE)
+
+ghost_img = pygame.Surface((25, 25), pygame.SRCALPHA)  # Contains a flag telling pygame that the Surface is per-pixel alpha
+ghost_img.set_alpha(96)
 
 running = True
 frames = 0
@@ -277,10 +300,10 @@ while running:
                 lr_pressed = False
                 lr_delay = LR_DELAY
 
-    keys = pygame.key.get_pressed() 
-    if input_delay == 0:
+    keys = pygame.key.get_pressed() # This method of getting key input allows for holding down
+    if input_delay == 0: # Once input delay has counted down to zero
         input_delay = INPUT_DELAY
-        if lr_delay == 0:
+        if lr_delay == 0: # Start moving left/right fast after left/right key has been held down for lr_delay frames
             if keys[pygame.K_LEFT]:
                 game.left()
             if keys[pygame.K_RIGHT]:
@@ -293,19 +316,27 @@ while running:
 
     for j in range(GRID_HEIGHT - 2):
         for i in range(GRID_WIDTH):
-            fill = list(COLOUR_MAP.keys())[game.get_tile(i, j + 2)]
+            fill = list(COLOUR_MAP.keys())[game.get_tile(i, j + 2)] # Offset by 2 as there are two rows of hidden tiles at the top of the screen
             if game.gameover:
-                fill = NONE if fill == NONE else L_GREY
+                fill = NONE if fill == NONE else L_GREY # Turn all tiles grey if game over
             draw_rect(screen, i * 25, j * 25, 25, 25, fill, D_GREY, 1 if fill == NONE else 0)
+
+    if game.curr_tetronimo != None:
+        yoff = game.get_gap()
+        for j in range(4): # Draw ghost tetronimo (where tetronimo would be placed if it were hard dropped)
+            for i in range(4):
+                if game.is_filled(i, j, game.rotation):
+                    pygame.draw.rect(ghost_img, game.curr_tetronimo.colour, ghost_img.get_rect(), 25)
+                    screen.blit(ghost_img, ((game.xpos + i) * 25, (game.ypos + yoff + j - 2) * 25))
+
 
     if game.gameover:
         draw_rect(screen, 0, 225, 250, 30, NONE)
-        screen.blit(img, (25, 225))
-
+        screen.blit(gameover_img, (25, 225))
 
     pygame.display.flip()
     
-    frames += 1
+    frames += 1 # Update frame and delay counters
     if input_delay > 0:
         input_delay -= 1
     if lr_pressed and lr_delay > 0:
