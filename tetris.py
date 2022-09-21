@@ -268,6 +268,10 @@ class Game:
         self.next_tetronimos.append(random.choice(TETRONIMOES))
         self.curr_tetronimo = None
         self.held_tetronimo = None
+
+        self.new_tetronimo = False 
+        self.has_stored = False
+        self.gameover = False
     
         self.update_speed = INITIAL_SPEED
         self.stick_time = STICK_FRAMES
@@ -297,9 +301,11 @@ pygame.display.set_icon(icon)
 
 gameover_font = pygame.font.SysFont(None, 48)
 gameover_img = gameover_font.render("GAME OVER", True, WHITE)
-label_font = pygame.font.SysFont(None, 32)
-next_img = label_font.render("NEXT", True, WHITE)
-held_img = label_font.render("HELD", True, WHITE)
+heading_font = pygame.font.SysFont(None, 32)
+next_img = heading_font.render("NEXT", True, WHITE)
+held_img = heading_font.render("HELD", True, WHITE)
+label_font = pygame.font.SysFont(None, 20)
+restart_img = label_font.render("PRESS [R] TO RESTART", True, WHITE)
 
 ghost_img = pygame.Surface((25, 25), pygame.SRCALPHA)  # Contains a flag telling pygame that the Surface is per-pixel alpha
 ghost_img.set_alpha(96)
@@ -330,8 +336,12 @@ while running:
                 lr_pressed = True
             if event.key == pygame.K_SPACE:
                 game.hard_down()
-            if event.key == pygame.K_c: # TODO: store a piece
+            if event.key == pygame.K_c:
                 game.store()
+            if event.key == pygame.K_r:
+                if game.gameover:
+                    game.reset()
+
         elif event.type == pygame.KEYUP:
             if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
                 lr_pressed = False
@@ -389,8 +399,9 @@ while running:
                     draw_rect(screen, 275 + (i + left_adj) * 25, 45 + offset + j * 25, 25, 25, game.held_tetronimo.colour)
 
     if game.gameover:
-        draw_rect(screen, 0, 225, 250, 30, NONE)
+        draw_rect(screen, 0, 225, 250, 60, NONE)
         screen.blit(gameover_img, (25, 225))
+        screen.blit(restart_img, (25, 260))
 
     pygame.display.flip()
     
